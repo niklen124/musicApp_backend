@@ -8,9 +8,24 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), { prefix: '/uploads' });
+  const uploadsPath = join(process.cwd(), 'uploads');
 
-  app.enableCors();
+  app.useStaticAssets(uploadsPath, {
+    prefix: '/uploads',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setHeaders: (res: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      res.setHeader('Accept-Ranges', 'bytes');
+    },
+  });
+
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Authorization',
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // supprime les champs non déclarés dans le DTO
@@ -23,4 +38,4 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+void bootstrap();
