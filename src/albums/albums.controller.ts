@@ -1,0 +1,55 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { AlbumsService } from './albums.service';
+import { CreateAlbumDto } from './dto/create-album.dto';
+import { UpdateAlbumDto } from './dto/update-album.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/roles.decorator';
+
+@Controller('albums')
+export class AlbumsController {
+  constructor(private readonly albumsService: AlbumsService) {}
+
+  // Lecture publique. ?artistId=... permet de filtrer les albums d'un artiste
+  // (couvre le besoin de GET /artists/:id/albums sans dupliquer la logique)
+  @Get()
+  findAll(@Query('artistId') artistId?: string) {
+    return this.albumsService.findAll(artistId);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.albumsService.findOne(id);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Post()
+  create(@Body() createAlbumDto: CreateAlbumDto) {
+    return this.albumsService.create(createAlbumDto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto) {
+    return this.albumsService.update(id, updateAlbumDto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.albumsService.remove(id);
+  }
+}

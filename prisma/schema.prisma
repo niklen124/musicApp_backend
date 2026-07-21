@@ -1,0 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+}
+
+enum Role {
+  USER
+  ARTIST
+  ADMIN
+}
+
+model RefreshToken {
+  id          Int      @id @default(autoincrement())
+  hashedToken String
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  revoked     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String          @unique
+  passwordHash  String
+  role          Role            @default(USER)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  refreshTokens RefreshToken[]
+  preference    UserPreference?
+  playlists     Playlist[]
+  player        Player?
+}
+
+model UserPreference {
+  userId        Int      @id
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme         String   @default("dark")
+  defaultVolume Int      @default(80)
+}
+
+model Artist {
+  id      String   @id @default(uuid())
+  name    String
+  bio     String?
+
+  albums  Album[]
+  tracks  Track[]
+
+  @@index([name])
+}
+
+model Album {
+  id           String   @id @default(uuid())
+  title        String
+  releaseYear  Int
+  coverUrl     String?
+
+  artistId     String
+  artist       Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  tracks       Track[]
+
+  @@index([title])
+}
+
+model Genre {
+  id      String   @id @default(uuid())
+  name    String   @unique
+
+  tracks  Track[]
+}
+
+model Track {
+  id               String   @id @default(uuid())
+  title            String
+  durationSeconds  Int
+  fileUrl          String
+  playCount        Int      @default(0)
+  uploadedAt       DateTime @default(now())
+
+  artistId         String
+  artist           Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  albumId          String?
+  album            Album?   @relation(fields: [albumId], references: [id], onDelete: SetNull)
+
+  genreId          String
+  genre            Genre    @relation(fields: [genreId], references: [id], onDelete: Restrict)
+
+  playlistTracks   PlaylistTrack[]
+  queueTracks      QueueTrack[]
+  playerCurrentFor Player[] @relation("CurrentTrack")
+
+  @@index([title])
+}
+
+model Playlist {
+  id         String          @id @default(uuid())
+  name       String
+  isPublic   Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+
+  ownerId    Int
+  owner      User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  tracks     PlaylistTrack[]
+
+  @@index([ownerId])
+}
+
+model PlaylistTrack {
+  playlistId  String
+  trackId     String
+  position    Int
+  addedAt     DateTime  @default(now())
+
+  playlist    Playlist  @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track       Track     @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@id([playlistId, trackId])
+  @@index([playlistId, position])
+}
+
+model Player {
+  userId          Int      @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  currentTrackId  String?
+  currentTrack    Track?   @relation("CurrentTrack", fields: [currentTrackId], references: [id], onDelete: SetNull)
+
+  positionSeconds Int      @default(0)
+  volume          Int      @default(80)
+  isPlaying       Boolean  @default(false)
+  repeatMode      String   @default("none")
+  shuffle         Boolean  @default(false)
+
+  queue           Queue?
+}
+
+model Queue {
+  id           String       @id @default(uuid())
+
+  playerId     Int          @unique
+  player       Player       @relation(fields: [playerId], references: [userId])
+
+  currentIndex Int          @default(0)
+
+  tracks       QueueTrack[]
+}
+
+model QueueTrack {
+  id        String   @id @default(uuid())
+  position  Int
+
+  queueId   String
+  queue     Queue    @relation(fields: [queueId], references: [id], onDelete: Cascade)
+
+  trackId   String
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([queueId, position])
+}
