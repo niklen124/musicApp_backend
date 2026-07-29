@@ -7,13 +7,20 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { GenresService } from './genres.service';
 import { CreateGenreDto } from './dto/create-genre.dto';
 import { UpdateGenreDto } from './dto/update-genre.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
+import {
+  imageFileStorage,
+  imageFileFilter,
+} from 'src/common/multer-image.config';
 
 @Controller('genres')
 export class GenresController {
@@ -22,7 +29,6 @@ export class GenresController {
   // Lecture publique : pas de guard, tout le monde peut consulter les genres
   @Get()
   findAll() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.genresService.findAll();
   }
 
@@ -35,15 +41,41 @@ export class GenresController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post()
-  create(@Body() createGenreDto: CreateGenreDto) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  @UseInterceptors(
+    FileInterceptor('coverFile', {
+      storage: imageFileStorage,
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  create(
+    @Body() createGenreDto: CreateGenreDto,
+    @UploadedFile() coverFile?: Express.Multer.File,
+  ) {
+    if (coverFile) {
+      createGenreDto.coverUrl = `/uploads/images/${coverFile.filename}`;
+    }
     return this.genresService.create(createGenreDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateGenreDto: UpdateGenreDto) {
+  @UseInterceptors(
+    FileInterceptor('coverFile', {
+      storage: imageFileStorage,
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  update(
+    @Param('id') id: string,
+    @Body() updateGenreDto: UpdateGenreDto,
+    @UploadedFile() coverFile?: Express.Multer.File,
+  ) {
+    if (coverFile) {
+      updateGenreDto.coverUrl = `/uploads/images/${coverFile.filename}`;
+    }
     return this.genresService.update(id, updateGenreDto);
   }
 

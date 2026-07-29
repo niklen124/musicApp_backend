@@ -23,6 +23,7 @@ model User {
   name          String
   email         String          @unique
   passwordHash  String
+  avatarUrl     String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   role          Role            @default(USER)
@@ -40,11 +41,13 @@ model UserPreference {
 }
 
 model Artist {
-  id     String  @id @default(uuid())
-  name   String
-  bio    String?
-  albums Album[]
-  tracks Track[]
+  id        String  @id @default(uuid())
+  name      String
+  bio       String?
+  avatarUrl String?
+  coverUrl  String?
+  albums    Album[]
+  tracks    Track[]
 
   @@index([name])
 }
@@ -62,9 +65,10 @@ model Album {
 }
 
 model Genre {
-  id     String  @id @default(uuid())
-  name   String  @unique
-  tracks Track[]
+  id       String  @id @default(uuid())
+  name     String  @unique
+  coverUrl String?
+  tracks   Track[]
 }
 
 model Track {
@@ -72,6 +76,7 @@ model Track {
   title            String
   durationSeconds  Int
   fileUrl          String
+  coverUrl         String?
   playCount        Int             @default(0)
   uploadedAt       DateTime        @default(now())
   artistId         String
@@ -88,13 +93,15 @@ model Track {
 }
 
 model Playlist {
-  id        String          @id @default(uuid())
-  name      String
-  isPublic  Boolean         @default(false)
-  createdAt DateTime        @default(now())
-  ownerId   Int
-  owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  tracks    PlaylistTrack[]
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  coverUrl    String?
+  isPublic    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  ownerId     Int
+  owner       User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tracks      PlaylistTrack[]
 
   @@index([ownerId])
 }

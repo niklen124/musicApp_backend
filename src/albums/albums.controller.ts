@@ -8,13 +8,20 @@ import {
   Delete,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AlbumsService } from './albums.service';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
+import {
+  imageFileStorage,
+  imageFileFilter,
+} from 'src/common/multer-image.config';
 
 @Controller('albums')
 export class AlbumsController {
@@ -35,14 +42,41 @@ export class AlbumsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post()
-  create(@Body() createAlbumDto: CreateAlbumDto) {
+  @UseInterceptors(
+    FileInterceptor('coverFile', {
+      storage: imageFileStorage,
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  create(
+    @Body() createAlbumDto: CreateAlbumDto,
+    @UploadedFile() coverFile?: Express.Multer.File,
+  ) {
+    if (coverFile) {
+      createAlbumDto.coverUrl = `/uploads/images/${coverFile.filename}`;
+    }
     return this.albumsService.create(createAlbumDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAlbumDto: UpdateAlbumDto) {
+  @UseInterceptors(
+    FileInterceptor('coverFile', {
+      storage: imageFileStorage,
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  update(
+    @Param('id') id: string,
+    @Body() updateAlbumDto: UpdateAlbumDto,
+    @UploadedFile() coverFile?: Express.Multer.File,
+  ) {
+    if (coverFile) {
+      updateAlbumDto.coverUrl = `/uploads/images/${coverFile.filename}`;
+    }
     return this.albumsService.update(id, updateAlbumDto);
   }
 

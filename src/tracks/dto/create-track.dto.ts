@@ -29,4 +29,8 @@ export class CreateTrackDto {
 
   @IsString()
   genreId: string;
+
+  @IsOptional()
+  @IsString()
+  coverUrl?: string;
 }

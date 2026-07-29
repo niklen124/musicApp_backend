@@ -2,7 +2,6 @@ import {
   IsString,
   IsInt,
   IsOptional,
-  IsUrl,
   Min,
   Max,
   MinLength,
@@ -21,7 +20,7 @@ export class CreateAlbumDto {
   releaseYear: number;
 
   @IsOptional()
-  @IsUrl({}, { message: 'coverUrl doit être une URL valide' })
+  @IsString()
   coverUrl?: string;
 
   @IsString()

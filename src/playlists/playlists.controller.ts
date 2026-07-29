@@ -8,7 +8,10 @@ import {
   Delete,
   UseGuards,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { PlaylistsService } from './playlists.service';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
@@ -17,6 +20,10 @@ import { AddTrackDto } from './dto/add-track.dto';
 import { ReorderPlaylistDto } from './dto/reorder-playlist.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from 'src/auth/optional-jwt-auth.guard';
+import {
+  imageFileStorage,
+  imageFileFilter,
+} from 'src/common/multer-image.config';
 
 interface AuthenticatedRequest extends Request {
   user: { id: number; role: string };
@@ -32,7 +39,21 @@ export class PlaylistsController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Req() req: AuthenticatedRequest, @Body() dto: CreatePlaylistDto) {
+  @UseInterceptors(
+    FileInterceptor('coverFile', {
+      storage: imageFileStorage,
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  create(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: CreatePlaylistDto,
+    @UploadedFile() coverFile?: Express.Multer.File,
+  ) {
+    if (coverFile) {
+      dto.coverUrl = `/uploads/images/${coverFile.filename}`;
+    }
     return this.playlistsService.create(req.user.id, dto);
   }
 
@@ -51,11 +72,22 @@ export class PlaylistsController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
+  @UseInterceptors(
+    FileInterceptor('coverFile', {
+      storage: imageFileStorage,
+      fileFilter: imageFileFilter,
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
   update(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
     @Body() dto: UpdatePlaylistDto,
+    @UploadedFile() coverFile?: Express.Multer.File,
   ) {
+    if (coverFile) {
+      dto.coverUrl = `/uploads/images/${coverFile.filename}`;
+    }
     return this.playlistsService.update(id, req.user.id, req.user.role, dto);
   }
 

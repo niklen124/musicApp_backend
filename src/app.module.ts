@@ -17,6 +17,7 @@ import { PlaylistsModule } from './playlists/playlists.module';
 import { PlayerModule } from './player/player.module';
 import { QueueModule } from './queue/queue.module';
 import { SearchModule } from './search/search.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { SearchModule } from './search/search.module';
     PlayerModule,
     QueueModule,
     SearchModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
