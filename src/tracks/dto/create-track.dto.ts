@@ -14,11 +14,14 @@ export class CreateTrackDto {
   @MaxLength(150)
   title: string;
 
-  // Vient en multipart/form-data (string) donc @Type(() => Number) pour convertir
+  // Optionnel : la vraie durée est désormais détectée automatiquement depuis
+  // le fichier audio uploadé (voir TracksService.getAudioDuration). Ce champ
+  // ne sert plus que de fallback si jamais la détection échoue.
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  durationSeconds: number;
+  durationSeconds?: number;
 
   @IsString()
   artistId: string;

@@ -34,8 +34,6 @@ export class TracksController {
     return this.tracksService.findOne(id);
   }
 
-  // Incrémente le compteur d'écoutes. N'importe quel utilisateur connecté
-  // peut déclencher ça (juste besoin d'être authentifié, pas de rôle spécifique).
   @UseGuards(JwtAuthGuard)
   @Post(':id/play')
   play(@Param('id') id: string) {
@@ -63,11 +61,26 @@ export class TracksController {
     return this.tracksService.create(createTrackDto, fileUrl);
   }
 
+  // Le fichier audio est désormais optionnel ici : s'il est fourni, il
+  // remplace l'ancien (et l'ancien fichier physique est supprimé du disque).
+  // S'il est absent, seules les métadonnées (title, genreId, ...) sont mises à jour.
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'ARTIST')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTrackDto: UpdateTrackDto) {
-    return this.tracksService.update(id, updateTrackDto);
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: trackFileStorage,
+      fileFilter: audioFileFilter,
+      limits: { fileSize: 20 * 1024 * 1024 },
+    }),
+  )
+  update(
+    @Param('id') id: string,
+    @Body() updateTrackDto: UpdateTrackDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    const newFileUrl = file ? `/uploads/tracks/${file.filename}` : undefined;
+    return this.tracksService.update(id, updateTrackDto, newFileUrl);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

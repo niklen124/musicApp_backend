@@ -40,6 +40,18 @@ export class AlbumsService {
     return album;
   }
 
+  // Tracklist d'un album, avec artist/genre inclus pour que le frontend
+  // (TrackRow, PlayerBar) ait tout ce qu'il lui faut sans requête supplémentaire.
+  async findTracks(albumId: string) {
+    await this.findOne(albumId); // 404 clair si l'album n'existe pas
+
+    return this.databaseService.track.findMany({
+      where: { albumId },
+      include: { artist: true, genre: true },
+      orderBy: { uploadedAt: 'asc' },
+    });
+  }
+
   async update(id: string, updateAlbumDto: UpdateAlbumDto) {
     await this.findOne(id);
 
