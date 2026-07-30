@@ -34,9 +34,6 @@ export class AlbumsController {
     return this.albumsService.findAll(artistId);
   }
 
-  // IMPORTANT : cette route doit rester déclarée AVANT @Get(':id'),
-  // sinon NestJS matcherait ":id" avec la valeur "xxxx-xxxx/tracks"
-  // et cette route ne serait jamais atteinte.
   @Get(':id/tracks')
   findTracks(@Param('id') id: string) {
     return this.albumsService.findTracks(id);
